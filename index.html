@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>Экран ТВ — Диспетчерская</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="assets/peerjs.min.js" defer></script>
+  <script src="assets/peerjs.min.js?v=2" defer></script>
 
   <style>
     * { -webkit-box-sizing: border-box; -moz-box-sizing: border-box; box-sizing: border-box; }
@@ -383,7 +383,7 @@
       border-top: 6px solid #fff; margin-top: -1px;
     }
   </style>
-  <style>#auth-overlay, #panel { display: none !important; }</style>
+  <style>#auth-overlay { display: none !important; }</style>
 </head>
 <body>
 
@@ -973,7 +973,7 @@
       renderAll();
 
       if (isTvUrl) {
-        document.getElementById('panel').style.display = 'none';
+        document.getElementById('panel').style.display = 'flex';
         if (appData.tvScreenMode === 'dashboard') {
           applyLocalScreenMode('dashboard');
         }
@@ -1284,6 +1284,7 @@
     function broadcastData() {}
     function broadcastMapView() {}
   </script>
-  <script src="tv-receiver.js" defer></script>
+  
+  <script src="tv-receiver.js?v=2" defer></script>
 </body>
 </html>
