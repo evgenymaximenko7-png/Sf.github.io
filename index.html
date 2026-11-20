@@ -383,7 +383,7 @@
       border-top: 6px solid #fff; margin-top: -1px;
     }
   </style>
-  <style>#auth-overlay { display: none !important; }</style>
+  <style>#auth-overlay, #panel { display: none !important; }</style>
 </head>
 <body>
 
@@ -973,7 +973,7 @@
       renderAll();
 
       if (isTvUrl) {
-        document.getElementById('panel').style.display = 'flex';
+        document.getElementById('panel').style.display = 'none';
         if (appData.tvScreenMode === 'dashboard') {
           applyLocalScreenMode('dashboard');
         }
@@ -1285,6 +1285,6 @@
     function broadcastMapView() {}
   </script>
   
-  <script src="tv-receiver.js?v=2" defer></script>
+  <script src="tv-receiver.js?v=3" defer></script>
 </body>
 </html>

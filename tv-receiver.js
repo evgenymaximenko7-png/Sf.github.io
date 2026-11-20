@@ -24,10 +24,8 @@
   function setScreen(mode) {
     screenMode = mode === 'dashboard' ? 'dashboard' : 'map';
     appData.tvScreenMode = screenMode;
-    document.getElementById('panel').style.display = 'flex';
     applyLocalScreenMode(screenMode); updateTvModeButtonUI();
   }
-  document.getElementById('panel').style.display = 'flex';
   function isNumber(value) { return typeof value === 'number' && isFinite(value); }
   function owns(object, key) { return Object.prototype.hasOwnProperty.call(object, key); }
   function validView(view) {
@@ -42,7 +40,6 @@
   }
   window.onFleetTvMapReady = function () {
     if (pendingView) applyView(pendingView);
-    document.getElementById('panel').style.display = 'flex';
   };
   function normalizeState(input) {
     if (!input || typeof input !== 'object' || !input.cars || typeof input.cars !== 'object' || Array.isArray(input.cars)) throw new Error('Invalid data');
@@ -138,7 +135,7 @@
     stopped = true; clearTimeout(retryTimer); clearTimeout(connectionTimer); clearTimeout(hideTimer);
     if (receiver && !receiver.destroyed) receiver.destroy();
   });
-  // Map loading cannot block the pairing code, sidebar or dashboard.
+  // Map loading cannot block the pairing code or dashboard.
   if (typeof initYandexMap === 'function') {
     var mapScript = document.createElement('script');
     mapScript.src = 'https://api-maps.yandex.ru/2.1/?lang=ru_RU'; mapScript.async = true;
