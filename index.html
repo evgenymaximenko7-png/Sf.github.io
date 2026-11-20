@@ -405,7 +405,7 @@
   <div id="dashboard-view">
     <div class="hud-header">
       <div class="hud-headline">
-        <div class="hud-tag">ОПЕРАТИВНЫЙ МОНИТОРИНГ ТЫЛА</div>
+        <div class="hud-tag">МОНИТОРИНГ</div>
         <h1 class="hud-title">НА ВЫЕЗДЕ В ДАННЫЙ МОМЕНТ</h1>
       </div>
 
@@ -605,6 +605,7 @@
       if (!container) return;
       container.innerHTML = '';
 
+      var specialCargoKey = 'highValueCargo';
       var groups = {};
       var totalActiveVehicles = 0;
       var movingCount = 0;
@@ -618,7 +619,7 @@
         // ПОЛНОСТЬЮ ИСКЛЮЧАЕМ ТЕХНИКУ В СТАТУСЕ "СТОИТ"
         if (car.status === 'stopped') continue;
 
-        var cg = car.cargo || 'БП';
+        var cg = car.highValueCargo === true ? specialCargoKey : (car.cargo || 'БП');
         var vCnt = car.vehicles ? car.vehicles.length : 1;
 
         if (!groups[cg]) groups[cg] = [];
@@ -637,7 +638,7 @@
       document.getElementById('kpi-loading').innerHTML = loadingCount;
       document.getElementById('kpi-unloading').innerHTML = unloadingCount;
 
-      var activeCargoKeys = [];
+      var activeCargoKeys = groups[specialCargoKey] ? [specialCargoKey] : [];
       for (var i = 0; i < CARGO_TYPES.length; i++) {
         var key = CARGO_TYPES[i];
         if (groups[key] && groups[key].length > 0) {
@@ -657,7 +658,9 @@
 
       for (var j = 0; j < activeCargoKeys.length; j++) {
         var cgKey = activeCargoKeys[j];
-        var conf = CARGO_CONFIG[cgKey] || { label: cgKey, svg: ICONS_SVG.bp, color: "#3b82f6" };
+        var conf = cgKey === specialCargoKey
+          ? { label: 'Особый контроль', svg: '', color: '#f6c768' }
+          : CARGO_CONFIG[cgKey] || { label: cgKey, svg: ICONS_SVG.bp, color: "#3b82f6" };
         var carsInGroup = groups[cgKey] || [];
         var groupTotal = 0;
         for (var c = 0; c < carsInGroup.length; c++) {
@@ -694,6 +697,8 @@
               '<span class="dash-car-badge-count">' + vCount + ' Т/С</span>' +
             '</div>' +
             '<div class="dash-vehicles-list">' + vehiclesRows + '</div>' +
+            (cgKey === specialCargoKey ? '<div class="dash-card-route" style="max-width:100%;">Вид груза: ' +
+              (CARGO_CONFIG[item.cargo] || CARGO_CONFIG['БП']).label + '</div>' : '') +
             '<div class="dash-card-bottom">' +
               '<span class="dash-card-route">→ ' + nextName + '</span>' +
               '<span class="dash-card-status" style="background:' + st.color + ';">' + st.label + '</span>' +
