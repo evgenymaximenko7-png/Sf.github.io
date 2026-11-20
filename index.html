@@ -600,6 +600,83 @@
     }
 
     /* РЕНДЕР ДАШБОРДА БЕЗ ВЫЛЕТА ЗА ПРЕДЕЛЫ ЭКРАНА */
+    var cargoInspection = (function createCargoInspection() {
+  var freshFor = 45 * 60 * 1000;
+  var dueAfter = 80 * 60 * 1000;
+  var maxDate = 253402300799999;
+  var maxTimeout = 2147483647;
+  var formatter;
+  try {
+    formatter = new Intl.DateTimeFormat('ru-RU', {
+      timeZone: 'Europe/Moscow', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+    });
+  } catch (error) {
+    // Older TVs may lack international date formatting.
+  }
+  var timer;
+
+  function checkedAt(car) {
+    var time = car.cargoCheckedAt;
+    return typeof time === 'number' && time > 0 && time <= maxDate && Math.floor(time) === time ? time : null;
+  }
+
+  function formatTime(time) {
+    if (formatter) return formatter.format(time);
+    var date = new Date(time + 3 * 60 * 60 * 1000);
+    var twoDigits = function (value) { return ('0' + value).slice(-2); };
+    return twoDigits(date.getUTCDate()) + '.' + twoDigits(date.getUTCMonth() + 1) + ', ' +
+      twoDigits(date.getUTCHours()) + ':' + twoDigits(date.getUTCMinutes());
+  }
+
+  function prepare(cars, now, redraw) {
+    clearTimeout(timer);
+    var overdue = [];
+    var remaining = [];
+    var next = Infinity;
+    cars.forEach(function (car) {
+      var time = checkedAt(car);
+      if (time && now - time > dueAfter) {
+        overdue.push(car);
+      } else {
+        remaining.push(car);
+        if (time) {
+          var deadline = now - time < freshFor ? time + freshFor : time + dueAfter + 1;
+          next = Math.min(next, deadline);
+        }
+      }
+    });
+    if (next < Infinity) timer = setTimeout(redraw, Math.min(next - now, maxTimeout));
+    overdue.sort(function (first, second) { return first.cargoCheckedAt - second.cargoCheckedAt; });
+    return overdue.concat(remaining);
+  }
+
+  function summary(car, now) {
+    var time = checkedAt(car);
+    var text = time ? 'Груз проверен · ' + formatTime(time) + ' МСК' : 'Проверка груза не отмечена';
+    var color = '#9ca3af';
+    var state = 'Нет отметки о проверке груза';
+    if (time) {
+      var elapsed = now - time;
+      if (elapsed < freshFor) {
+        color = '#2ecc71';
+        state = 'С проверки прошло меньше 45 минут';
+      } else if (elapsed <= dueAfter) {
+        color = '#f6c768';
+        state = 'С проверки прошло от 45 до 80 минут';
+      } else {
+        color = '#ff6464';
+        state = 'С проверки прошло больше 80 минут';
+      }
+    }
+    return '<div class="dash-card-route" style="max-width:100%;" aria-label="' + text + '. ' + state + '" title="' +
+      state + '">' +
+      '<span aria-hidden="true" style="display:inline-block;width:7px;height:7px;border-radius:50%;' +
+      'background:' + color + ';margin-right:5px;"></span>' + text + '</div>';
+  }
+
+  return { prepare: prepare, summary: summary };
+})();
+
     function renderDashboardView() {
       var container = document.getElementById('dashboard-row-container');
       if (!container) return;
@@ -638,7 +715,12 @@
       document.getElementById('kpi-loading').innerHTML = loadingCount;
       document.getElementById('kpi-unloading').innerHTML = unloadingCount;
 
-      var activeCargoKeys = groups[specialCargoKey] ? [specialCargoKey] : [];
+      var inspectionNow = Date.now();
+      var specialCars = cargoInspection.prepare(groups[specialCargoKey] || [], inspectionNow, function () {
+        if (container.offsetWidth > 0) renderDashboardView();
+      });
+      if (specialCars.length) groups[specialCargoKey] = specialCars;
+      var activeCargoKeys = specialCars.length ? [specialCargoKey] : [];
       for (var i = 0; i < CARGO_TYPES.length; i++) {
         var key = CARGO_TYPES[i];
         if (groups[key] && groups[key].length > 0) {
@@ -698,7 +780,8 @@
             '</div>' +
             '<div class="dash-vehicles-list">' + vehiclesRows + '</div>' +
             (cgKey === specialCargoKey ? '<div class="dash-card-route" style="max-width:100%;">Вид груза: ' +
-              (CARGO_CONFIG[item.cargo] || CARGO_CONFIG['БП']).label + '</div>' : '') +
+              (CARGO_CONFIG[item.cargo] || CARGO_CONFIG['БП']).label + '</div>' +
+              cargoInspection.summary(item, inspectionNow) : '') +
             '<div class="dash-card-bottom">' +
               '<span class="dash-card-route">→ ' + nextName + '</span>' +
               '<span class="dash-card-status" style="background:' + st.color + ';">' + st.label + '</span>' +
